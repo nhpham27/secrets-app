@@ -5,6 +5,9 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require('mongoose');
 const encrypt = require("mongoose-encryption");
+const md5 = require("md5");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 const secret = process.env.DB_SECRET;
 
@@ -26,9 +29,6 @@ const userSchema = new mongoose.Schema({
     password: String
 });
 
-
-
-userSchema.plugin(encrypt, {secret: secret, encryptedChildren : ["password"]});
 // create model
 const User = mongoose.model("User", userSchema);
 
@@ -46,12 +46,21 @@ app.route("/login")
         const username = req.body.username;
         const password = req.body.password;
 
-        User.findOne({ email: username }, function (err, foundUser) {
+        User.findOne({ username: username }, function (err, foundUser) {
             if (!err) {
                 if (foundUser) {
-                    if (foundUser.password === password) {
-                        res.render("secrets");
-                    }
+                    bcrypt.compare(password, foundUser.password, function(err, result) {
+                        // result == true
+                        if(!err){
+                            if(result === true){
+                                res.render("secrets");
+                            } else {
+                                console.log("Password does not match!");
+                            }
+                        } else {
+                            console.log(err);
+                        }
+                    });
                 }
 
             } else { console.log(err); }
@@ -64,16 +73,21 @@ app.route("/register")
         res.render("register")
     })
     .post(function (req, res) {
-        const newUser = User({
-            username: req.body.username,
-            password: req.body.password
-        });
+        bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
+            // Store hash in your password DB.
+            if (!err) {
+                const newUser = User({
+                    username: req.body.username,
+                    password: hash
+                });
 
-        newUser.save(function (err) {
-            if (err) {
-                console.log(err);
-            } else {
-                res.render("secrets");
+                newUser.save(function (err) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        res.render("secrets");
+                    }
+                });
             }
         });
     });
