@@ -14,3 +14,8 @@ body {
   color: #fff;
   background-color: #000;
 }
+
+.secret-btn {
+  margin: 10px;
+  border-radius: 0;
+}
