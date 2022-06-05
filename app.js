@@ -53,7 +53,7 @@ app.route("/login")
                         // result == true
                         if(!err){
                             if(result === true){
-                                res.render("secrets");
+                                res.render("secrets"); 
                             } else {
                                 console.log("Password does not match!");
                             }
